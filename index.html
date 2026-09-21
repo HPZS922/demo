@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Public Wi-Fi and Network Safety awareness game">
+  <title>Wi-Fi Safety Challenge</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #080b12;
+      color: #f5f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: min(760px, 100%);
+      background: #111722;
+      border: 1px solid #273244;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+
+    .top {
+      padding: 20px 24px;
+      border-bottom: 1px solid #273244;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .brand { font-weight: 800; }
+    .score { color: #8ee6a8; font-weight: 700; }
+
+    .screen {
+      display: none;
+      padding: 36px 28px;
+      text-align: center;
+    }
+
+    .screen.active { display: block; }
+
+    h1 { margin: 0 0 12px; font-size: clamp(28px, 6vw, 48px); }
+    h2 { margin-top: 0; font-size: clamp(24px, 5vw, 36px); }
+    p { line-height: 1.6; color: #c4ccd8; }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 6px;
+      background: #6ee7a0;
+      color: #07100b;
+    }
+
+    button:hover { filter: brightness(1.08); }
+    button.secondary { background: #273244; color: #f5f7fa; }
+
+    .warning {
+      color: #ff6475;
+      font-size: clamp(26px, 7vw, 52px);
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    .terminal {
+      text-align: left;
+      background: #05070b;
+      border: 1px solid #303b4e;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px auto;
+      max-width: 620px;
+      min-height: 210px;
+      font-family: Consolas, monospace;
+      color: #8ee6a8;
+      overflow: hidden;
+    }
+
+    .terminal-line { margin: 8px 0; }
+    .danger { color: #ff6475; }
+
+    .progress {
+      height: 12px;
+      background: #202a39;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: #ff6475;
+      transition: width .3s;
+    }
+
+    .reveal {
+      font-size: 54px;
+      margin-bottom: 8px;
+    }
+
+    .tip-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: 24px 0;
+      text-align: left;
+    }
+
+    .tip {
+      padding: 16px;
+      background: #192130;
+      border: 1px solid #293548;
+      border-radius: 12px;
+    }
+
+    .tip strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .question {
+      text-align: left;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .option {
+      width: 100%;
+      margin: 0;
+      text-align: left;
+      background: #192130;
+      color: #f5f7fa;
+      border: 1px solid #334056;
+    }
+
+    .option.correct {
+      background: #164c2a;
+      border-color: #55d98a;
+    }
+
+    .option.wrong {
+      background: #54202a;
+      border-color: #ff6475;
+    }
+
+    .feedback {
+      min-height: 70px;
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #192130;
+      text-align: left;
+    }
+
+    .small {
+      font-size: 13px;
+      color: #8f9bad;
+    }
+
+    .final-score {
+      font-size: 52px;
+      font-weight: 900;
+      color: #8ee6a8;
+    }
+
+    @media (max-width: 600px) {
+      .tip-grid { grid-template-columns: 1fr; }
+      .screen { padding: 28px 18px; }
+      .top { padding: 16px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <header class="top">
+      <div class="brand">📶 Wi-Fi Safety Challenge</div>
+      <div class="score" id="scoreDisplay">Score: 0</div>
+    </header>
+
+    <section id="intro" class="screen active">
+      <div style="font-size:64px">📱</div>
+      <h1>Can You Spot the Wi-Fi Trap?</h1>
+      <p>
+        Scan, investigate, and test your public Wi-Fi safety knowledge.
+        This experience is a harmless simulation. It does not access your device,
+        files, location, passwords, or personal information.
+      </p>
+      <button id="startBtn">Start Challenge</button>
+    </section>
+
+    <section id="hack" class="screen">
+      <div class="warning">⚠️ SECURITY ALERT</div>
+      <div class="terminal">
+        <div class="terminal-line" id="line1">> Initialising security check...</div>
+        <div class="terminal-line" id="line2"></div>
+        <div class="terminal-line" id="line3"></div>
+        <div class="terminal-line danger" id="line4"></div>
+        <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="terminal-line danger" id="line5"></div>
+      </div>
+      <p class="small">Simulation only — no device information is being collected.</p>
+    </section>
+
+    <section id="reveal" class="screen">
+      <div class="reveal">😄</div>
+      <h2>JUST KIDDING!</h2>
+      <p>
+        Your device was <strong>not hacked</strong>. Nothing was accessed or collected.
+      </p>
+      <p>
+        The point is to show how a scary-looking security warning can make people
+        panic and act without thinking.
+      </p>
+      <button id="learnBtn">Learn & Play</button>
+    </section>
+
+    <section id="learn" class="screen">
+      <h2>🔐 Public Wi-Fi Safety</h2>
+      <p>Remember these five rules when using public or unfamiliar networks.</p>
+
+      <div class="tip-grid">
+        <div class="tip"><strong>📶 Verify the network</strong>Confirm the official Wi-Fi name with the business, school, or venue.</div>
+        <div class="tip"><strong>🌐 Check the website</strong>Look at the real domain and use HTTPS. Don't trust a padlock alone.</div>
+        <div class="tip"><strong>🛡️ Understand VPNs</strong>A VPN can protect traffic to the VPN service, but it does not make you completely safe or anonymous.</div>
+        <div class="tip"><strong>📂 Disable sharing</strong>Turn off unnecessary file sharing and network discovery on unfamiliar networks.</div>
+        <div class="tip"><strong>🚫 Think before sensitive actions</strong>Be extra cautious with passwords, banking, and other sensitive activity.</div>
+        <div class="tip"><strong>🧠 Don't panic</strong>Unexpected warnings and urgent messages may be designed to make you react without checking.</div>
+      </div>
+
+      <button id="quizBtn">Start 3-Question Quiz</button>
+    </section>
+
+    <section id="quiz" class="screen">
+      <div class="question">
+        <div class="small" id="questionNumber"></div>
+        <h2 id="questionText"></h2>
+        <div class="options" id="options"></div>
+        <div class="feedback" id="feedback" hidden></div>
+        <button id="nextBtn" class="secondary" hidden>Next Question</button>
+      </div>
+    </section>
+
+    <section id="result" class="screen">
+      <div style="font-size:64px">🏆</div>
+      <h2>Challenge Complete!</h2>
+      <div class="final-score" id="finalScore">0 / 3</div>
+      <p id="resultMessage"></p>
+      <p>
+        <strong>Takeaway:</strong> On public Wi-Fi, verify the network,
+        check websites carefully, minimise sharing, and think before entering
+        sensitive information.
+      </p>
+      <button id="restartBtn">Play Again</button>
+    </section>
+  </main>
+
+  <script>
+    const screens = document.querySelectorAll(".screen");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+
+    let score = 0;
+    let questionIndex = 0;
+
+    const questions = [
+      {
+        text: "You see two networks at a café: “Cafe_Guest” and “Cafe_Guest_Free”. What should you do?",
+        options: [
+          "Connect to whichever has the strongest signal",
+          "Connect to both and compare them",
+          "Verify the official network name with the café",
+          "Choose the one with “Free” in its name"
+        ],
+        answer: 2,
+        explanation: "A network name alone does not prove who operates it. Verify the official network with the venue."
+      },
+      {
+        text: "You are using unfamiliar public Wi-Fi and notice file sharing is enabled. What is the safer action?",
+        options: [
+          "Leave it enabled because public Wi-Fi is always safe",
+          "Turn off unnecessary file sharing and network discovery",
+          "Share your files with everyone nearby",
+          "Disable your device's firewall"
+        ],
+        answer: 1,
+        explanation: "Unnecessary sharing can expose services or files to other devices on the network."
+      },
+      {
+        text: "Which statement about a VPN is most accurate?",
+        options: [
+          "A VPN makes you completely anonymous",
+          "A VPN makes every website trustworthy",
+          "A VPN can protect traffic between your device and the VPN service",
+          "A VPN prevents every kind of malware"
+        ],
+        answer: 2,
+        explanation: "A VPN can provide an encrypted connection to the VPN service, but it is not a complete security solution."
+      }
+    ];
+
+    function showScreen(id) {
+      screens.forEach(screen => screen.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = "Score: " + score;
+    }
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      showScreen("hack");
+
+      const lines = [
+        ["line2", "> Checking network connection...", 400],
+        ["line3", "> Simulating security scan...", 900],
+        ["line4", "> WARNING: suspicious activity detected!", 1500],
+        ["line5", "> DEVICE COMPROMISED... (SIMULATION)", 2200]
+      ];
+
+      const bar = document.getElementById("progressBar");
+      bar.style.width = "0%";
+
+      lines.forEach(([id, text, delay]) => {
+        setTimeout(() => {
+          document.getElementById(id).textContent = text;
+          bar.style.width = Math.min(100, delay / 22) + "%";
+        }, delay);
+      });
+
+      setTimeout(() => {
+        showScreen("reveal");
+      }, 3800);
+    });
+
+    document.getElementById("learnBtn").addEventListener("click", () => {
+      showScreen("learn");
+    });
+
+    document.getElementById("quizBtn").addEventListener("click", () => {
+      score = 0;
+      questionIndex = 0;
+      updateScore();
+      showQuestion();
+      showScreen("quiz");
+    });
+
+    function showQuestion() {
+      const q = questions[questionIndex];
+      document.getElementById("questionNumber").textContent =
+        `Question ${questionIndex + 1} of ${questions.length}`;
+      document.getElementById("questionText").textContent = q.text;
+
+      const options = document.getElementById("options");
+      const feedback = document.getElementById("feedback");
+      const nextBtn = document.getElementById("nextBtn");
+
+      options.innerHTML = "";
+      feedback.hidden = true;
+      nextBtn.hidden = true;
+
+      q.options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.className = "option";
+        button.textContent = option;
+        button.type = "button";
+
+        button.addEventListener("click", () => {
+          const allButtons = options.querySelectorAll("button");
+          allButtons.forEach(btn => btn.disabled = true);
+
+          if (index === q.answer) {
+            score++;
+            button.classList.add("correct");
+            feedback.innerHTML = "<strong>✅ Correct!</strong><br>" + q.explanation;
+          } else {
+            button.classList.add("wrong");
+            allButtons[q.answer].classList.add("correct");
+            feedback.innerHTML = "<strong>❌ Not quite.</strong><br>" + q.explanation;
+          }
+
+          updateScore();
+          feedback.hidden = false;
+          nextBtn.hidden = false;
+        });
+
+        options.appendChild(button);
+      });
+    }
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      questionIndex++;
+
+      if (questionIndex < questions.length) {
+        showQuestion();
+      } else {
+        document.getElementById("finalScore").textContent =
+          `${score} / ${questions.length}`;
+
+        const message = document.getElementById("resultMessage");
+
+        if (score === 3) {
+          message.textContent = "Excellent! You spotted all three safety issues.";
+        } else if (score === 2) {
+          message.textContent = "Good job! You know most of the important safety rules.";
+        } else {
+          message.textContent = "Keep learning! Public Wi-Fi can require extra caution.";
+        }
+
+        showScreen("result");
+      }
+    });
+
+    document.getElementById("restartBtn").addEventListener("click", () => {
+      score = 0;
+      questionIndex = 0;
+      updateScore();
+      showScreen("intro");
+    });
+  </script>
+</body>
+</html>
