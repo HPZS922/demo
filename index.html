@@ -2,213 +2,708 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>System Check</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Connecting...</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 
-  body {
-    background: #000;
-    color: #00ff41;
-    font-family: 'Courier New', Courier, monospace;
-    height: 100vh;
+  html, body {
+    height: 100%;
+    width: 100%;
     overflow: hidden;
+    position: fixed;
+    overscroll-behavior: none;
+    touch-action: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: #000;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- LOADER ---------- */
+  #loader {
+    position: fixed;
+    inset: 0;
+    background: #000;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: opacity 0.35s;
+    padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
+             env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+  }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.85s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #loader p {
+    font-size: 14px;
+    color: #8e8e93;
+    letter-spacing: 0.2px;
+  }
+
+  /* ---------- SCAN SCREEN ---------- */
+  #scan {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    padding: calc(env(safe-area-inset-top, 0) + 16px) 18px
+             calc(env(safe-area-inset-bottom, 0) + 16px) 18px;
+    z-index: 90;
+  }
+
+  .scan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #8e8e93;
+    margin-bottom: 12px;
+    letter-spacing: 0.3px;
+  }
+
+  .scan-header .live {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .scan-header .dot {
+    width: 7px;
+    height: 7px;
+    background: #ff3b30;
+    border-radius: 50%;
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  .scan-title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 2px;
+  }
+
+  .scan-sub {
+    font-size: 13px;
+    color: #636366;
+    margin-bottom: 18px;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  }
+
+  .log {
+    flex: 1;
+    overflow: hidden;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #30d158;
+    letter-spacing: -0.1px;
+  }
+
+  .log .warn { color: #ffd60a; }
+  .log .err  { color: #ff453a; }
+  .log .info { color: #0a84ff; }
+  .log .dim  { color: #48484a; }
+
+  .progress {
+    height: 3px;
+    background: #1c1c1e;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 14px;
+  }
+
+  .progress > div {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ff3b30, #ff9500, #ffd60a);
+    transition: width 0.25s ease-out;
+  }
+
+  /* ---------- ALERT ---------- */
+  #alert {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    -webkit-tap-highlight-color: transparent;
+    z-index: 200;
+    animation: fadeIn 0.22s;
   }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  #terminal {
+  .dialog {
+    background: #1c1c1e;
+    border-radius: 14px;
     width: 100%;
-    max-width: 500px;
-    font-size: 15px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    word-break: break-word;
+    max-width: 320px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.9);
+    animation: pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  @keyframes pop {
+    from { transform: scale(0.88); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
   }
 
-  .cursor {
-    display: inline-block;
-    width: 9px;
-    height: 16px;
-    background: #00ff41;
-    vertical-align: middle;
-    animation: blink 0.8s infinite;
-  }
-
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
-  }
-
-  /* Glitch effect for the reveal */
-  .glitch {
-    color: #ff0040;
-    font-weight: bold;
-    animation: shake 0.3s infinite;
-  }
-
-  @keyframes shake {
-    0% { transform: translate(0, 0); }
-    25% { transform: translate(-2px, 1px); }
-    50% { transform: translate(2px, -1px); }
-    75% { transform: translate(-1px, -2px); }
-    100% { transform: translate(1px, 2px); }
-  }
-
-  /* Final awareness screen */
-  #awareness {
-    display: none;
-    text-align: center;
-    color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    animation: fadeIn 0.8s ease-in;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  #awareness h1 {
+  .dialog-icon {
+    width: 52px;
+    height: 52px;
+    margin: 20px auto 10px;
+    background: #ff3b30;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 28px;
-    color: #00ff41;
-    margin-bottom: 15px;
-    font-family: 'Courier New', monospace;
+    color: #fff;
+    font-weight: 700;
+    animation: shakeIcon 0.5s infinite;
+  }
+  @keyframes shakeIcon {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
   }
 
-  #awareness .emoji {
-    font-size: 50px;
-    margin-bottom: 10px;
-    display: block;
+  .dialog h2 {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    padding: 0 20px 5px;
+    letter-spacing: -0.2px;
   }
 
-  #awareness p {
-    font-size: 15px;
-    line-height: 1.6;
-    color: #ccc;
-    margin-bottom: 20px;
-    padding: 0 10px;
-  }
-
-  #awareness .tips {
-    background: #111;
-    border-left: 3px solid #00ff41;
-    padding: 15px 20px;
-    text-align: left;
-    border-radius: 4px;
-    margin: 0 auto;
-    max-width: 400px;
-  }
-
-  #awareness .tips li {
-    color: #ddd;
+  .dialog p {
     font-size: 13px;
-    margin-bottom: 8px;
-    line-height: 1.5;
-    list-style: none;
+    color: #98989d;
+    text-align: center;
+    padding: 0 24px 16px;
+    line-height: 1.45;
   }
 
-  #awareness .tips li::before {
-    content: "▸ ";
-    color: #00ff41;
+  .dialog .device-info {
+    background: #2c2c2e;
+    margin: 0 14px 14px;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 10.5px;
+    color: #d1d1d6;
+    line-height: 1.65;
+    text-align: left;
+    max-height: 150px;
+    overflow: hidden;
+    letter-spacing: -0.1px;
   }
 
-  .red-flash {
+  .dialog .device-info b { color: #fff; font-weight: 500; }
+
+  .dialog-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: #0a84ff;
+    color: #fff;
+    border: none;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    border-top: 1px solid #2c2c2e;
+    font-family: inherit;
+    letter-spacing: -0.2px;
+    -webkit-appearance: none;
+  }
+  .dialog-btn:active { background: #0066cc; }
+
+  /* ---------- REVEAL ---------- */
+  #reveal {
     position: fixed;
     inset: 0;
-    background: #ff0040;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: calc(env(safe-area-inset-top, 0) + 24px) 24px
+             calc(env(safe-area-inset-bottom, 0) + 24px) 24px;
+    z-index: 300;
+    animation: fadeIn 0.5s;
+    overflow-y: auto;
+  }
+
+  #reveal .big-emoji {
+    font-size: 60px;
+    margin-bottom: 12px;
+    animation: bounce 0.55s;
+  }
+  @keyframes bounce {
+    0% { transform: scale(0.3); }
+    60% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+
+  #reveal h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #30d158;
+    margin-bottom: 8px;
+    letter-spacing: -0.7px;
+  }
+
+  #reveal .sub {
+    font-size: 14px;
+    color: #8e8e93;
+    margin-bottom: 22px;
+    line-height: 1.5;
+    max-width: 300px;
+  }
+
+  .tips {
+    background: #1c1c1e;
+    border-radius: 14px;
+    padding: 18px;
+    width: 100%;
+    max-width: 340px;
+    text-align: left;
+  }
+
+  .tips .tip-title {
+    font-size: 12px;
+    color: #30d158;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 14px;
+  }
+
+  .tips .tip {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 11px;
+    font-size: 13px;
+    color: #d1d1d6;
+    line-height: 1.4;
+  }
+
+  .tips .tip:last-child { margin-bottom: 0; }
+
+  .tips .num {
+    color: #30d158;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'SF Mono', monospace;
+    font-size: 11px;
+    padding-top: 2px;
+  }
+
+  /* ---------- EFFECTS ---------- */
+  .red-overlay {
+    position: fixed;
+    inset: 0;
+    background: #ff3b30;
     opacity: 0;
     pointer-events: none;
     z-index: 999;
   }
 
-  .red-flash.active {
-    animation: flash 0.15s 4;
+  .red-overlay.flash {
+    animation: redFlash 0.45s 3;
+  }
+  @keyframes redFlash {
+    0%, 100% { opacity: 0; }
+    30% { opacity: 0.35; }
   }
 
-  @keyframes flash {
-    0%, 100% { opacity: 0; }
-    50% { opacity: 0.4; }
+  body.shake {
+    animation: bodyShake 0.35s;
+  }
+  @keyframes bodyShake {
+    0%, 100% { transform: translate(0,0); }
+    20% { transform: translate(-3px, 2px); }
+    40% { transform: translate(3px, -2px); }
+    60% { transform: translate(-2px, -2px); }
+    80% { transform: translate(2px, 2px); }
+  }
+
+  /* ---------- LANDSCAPE WARNING ---------- */
+  #rotate {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 1000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    padding: 30px;
+    text-align: center;
+  }
+
+  #rotate .icon {
+    font-size: 50px;
+    margin-bottom: 16px;
+    animation: rotateIcon 2s infinite;
+  }
+  @keyframes rotateIcon {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: rotate(90deg); }
+  }
+
+  #rotate p {
+    font-size: 15px;
+    color: #8e8e93;
+    line-height: 1.5;
+  }
+
+  @media (orientation: landscape) and (max-height: 500px) {
+    #rotate { display: flex; }
+  }
+
+  /* ---------- SMALL PHONES ---------- */
+  @media (max-height: 640px) {
+    .scan-title { font-size: 22px; }
+    .log { font-size: 11px; line-height: 1.55; }
+    #reveal .big-emoji { font-size: 48px; }
+    #reveal h1 { font-size: 24px; }
+    .tips { padding: 16px; }
+    .tips .tip { font-size: 12.5px; }
   }
 </style>
 </head>
 <body>
 
-<div id="terminal"></div>
+<div class="red-overlay" id="redOverlay"></div>
 
-<div id="awareness">
-  <span class="emoji">😄</span>
-  <h1>JUST KIDDING!</h1>
-  <p>Nothing was hacked. Your device is 100% safe.<br>This was a QR code safety demo.</p>
-  <div class="tips">
-    <li>Never scan QR codes from unknown sources</li>
-    <li>Check the URL before entering any info</li>
-    <li>QR codes can lead to phishing sites</li>
-    <li>When in doubt, don't scan</li>
+<!-- LANDSCAPE WARNING -->
+<div id="rotate">
+  <div class="icon">📱</div>
+  <p>Please rotate your device<br>to portrait mode</p>
+</div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="spinner"></div>
+  <p>Connecting to network...</p>
+</div>
+
+<!-- SCAN -->
+<div id="scan">
+  <div class="scan-header">
+    <span class="live"><span class="dot"></span>LIVE SCAN</span>
+    <span id="clock">00:00</span>
+  </div>
+  <div class="scan-title">Device Analysis</div>
+  <div class="scan-sub" id="deviceSub">Detecting hardware...</div>
+  <div class="log" id="log"></div>
+  <div class="progress"><div id="bar"></div></div>
+</div>
+
+<!-- ALERT -->
+<div id="alert">
+  <div class="dialog">
+    <div class="dialog-icon">!</div>
+    <h2>Security Breach Detected</h2>
+    <p>Your device has been compromised. Sensitive data is being extracted.</p>
+    <div class="device-info" id="deviceInfo"></div>
+    <button class="dialog-btn" id="dialogBtn">View Details</button>
   </div>
 </div>
 
-<div class="red-flash" id="flash"></div>
+<!-- REVEAL -->
+<div id="reveal">
+  <div class="big-emoji">😄</div>
+  <h1>JUST KIDDING!</h1>
+  <p class="sub">Nothing was actually hacked.<br>Your device is 100% safe.<br>This was a public Wi-Fi safety demo.</p>
+  <div class="tips">
+    <div class="tip-title">Stay Safe on Public Wi-Fi</div>
+    <div class="tip"><span class="num">01</span><span>Verify the network name with staff before connecting</span></div>
+    <div class="tip"><span class="num">02</span><span>Only use HTTPS sites — look for the lock icon</span></div>
+    <div class="tip"><span class="num">03</span><span>Use a VPN on any untrusted network</span></div>
+    <div class="tip"><span class="num">04</span><span>Turn off file sharing and AirDrop on public Wi-Fi</span></div>
+    <div class="tip"><span class="num">05</span><span>Never enter passwords on captive portal pages</span></div>
+  </div>
+</div>
 
 <script>
 (function() {
-  const terminal = document.getElementById('terminal');
-  const awareness = document.getElementById('awareness');
-  const flash = document.getElementById('flash');
+  // ---------- Elements ----------
+  const loader     = document.getElementById('loader');
+  const scan       = document.getElementById('scan');
+  const alertBox   = document.getElementById('alert');
+  const reveal     = document.getElementById('reveal');
+  const logEl      = document.getElementById('log');
+  const barEl      = document.getElementById('bar');
+  const clockEl    = document.getElementById('clock');
+  const deviceSub  = document.getElementById('deviceSub');
+  const deviceInfo = document.getElementById('deviceInfo');
+  const dialogBtn  = document.getElementById('dialogBtn');
+  const redOverlay = document.getElementById('redOverlay');
 
-  // Fake hacking sequence
+  // ---------- Haptic ----------
+  function buzz(pattern) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(pattern); } catch(e) {}
+    }
+  }
+
+  // ---------- Device info ----------
+  function getDeviceInfo() {
+    const ua = navigator.userAgent;
+    let os = 'Unknown', browser = 'Unknown', device = 'Unknown', type = 'Desktop';
+
+    if (/iPhone|iPod/.test(ua)) {
+      type = 'Phone';
+      device = 'iPhone';
+      const m = ua.match(/OS (\d+[_\d]*)/);
+      os = 'iOS ' + (m ? m[1].replace(/_/g, '.') : '');
+    }
+    else if (/iPad/.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document)) {
+      type = 'Tablet';
+      device = 'iPad';
+      const m = ua.match(/OS (\d+[_\d]*)/);
+      os = 'iPadOS ' + (m ? m[1].replace(/_/g, '.') : '');
+    }
+    else if (/Android/.test(ua)) {
+      const isTablet = !/Mobile/.test(ua);
+      type = isTablet ? 'Tablet' : 'Phone';
+      const model = ua.match(/;\s*([^;)]+)\s+Build/);
+      device = model && model[1] ? model[1].trim() : (isTablet ? 'Android Tablet' : 'Android Phone');
+      const m = ua.match(/Android ([\d.]+)/);
+      os = 'Android ' + (m ? m[1] : '');
+    }
+    else if (/Windows/.test(ua)) {
+      type = 'Desktop';
+      device = 'Windows PC';
+      os = /Windows NT 10/.test(ua) ? 'Windows 10/11' : 'Windows';
+    }
+    else if (/Mac OS X/.test(ua)) {
+      type = 'Desktop';
+      device = 'Mac';
+      const m = ua.match(/Mac OS X ([\d_]+)/);
+      os = 'macOS ' + (m ? m[1].replace(/_/g, '.') : '');
+    }
+    else if (/Linux/.test(ua)) {
+      type = 'Desktop';
+      device = 'Linux PC';
+      os = 'Linux';
+    }
+
+    if (/Edg\//.test(ua))           browser = 'Edge ' + (ua.match(/Edg\/([\d]+)/)||['',''])[1];
+    else if (/OPR\//.test(ua))      browser = 'Opera ' + (ua.match(/OPR\/([\d]+)/)||['',''])[1];
+    else if (/CriOS\//.test(ua))    browser = 'Chrome ' + (ua.match(/CriOS\/([\d]+)/)||['',''])[1];
+    else if (/FxiOS\//.test(ua))    browser = 'Firefox ' + (ua.match(/FxiOS\/([\d]+)/)||['',''])[1];
+    else if (/Chrome\//.test(ua))   browser = 'Chrome ' + (ua.match(/Chrome\/([\d]+)/)||['',''])[1];
+    else if (/Firefox\//.test(ua))  browser = 'Firefox ' + (ua.match(/Firefox\/([\d]+)/)||['',''])[1];
+    else if (/Version\/.*Safari/.test(ua)) browser = 'Safari ' + (ua.match(/Version\/([\d]+)/)||['',''])[1];
+
+    const sw = Math.min(screen.width, screen.height);
+    const sh = Math.max(screen.width, screen.height);
+
+    return {
+      type, device, os, browser,
+      screen: `${sw}×${sh}`,
+      dpr: window.devicePixelRatio || 1,
+      lang: (navigator.language || 'en').toUpperCase(),
+      cores: navigator.hardwareConcurrency || '?',
+      timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone || '').split('/').pop() || '?',
+      online: navigator.onLine
+    };
+  }
+
+  const info = getDeviceInfo();
+
+  // ---------- Battery + Network (async, may not be available) ----------
+  let batteryText = null;
+  let networkText = null;
+
+  if (navigator.getBattery) {
+    navigator.getBattery().then(b => {
+      const pct = Math.round(b.level * 100);
+      const status = b.charging ? 'charging' : 'discharging';
+      batteryText = `${pct}% (${status})`;
+    }).catch(() => {});
+  }
+
+  if (navigator.connection) {
+    const c = navigator.connection;
+    const type = (c.type || '').toLowerCase();
+    const eff  = (c.effectiveType || '').toLowerCase();
+    if (type === 'wifi')      networkText = 'WiFi';
+    else if (type === 'cellular') networkText = 'Cellular (' + (eff || '4g') + ')';
+    else if (type === 'ethernet') networkText = 'Ethernet';
+    else if (eff)             networkText = eff.toUpperCase();
+  }
+
+  // Fake identifiers
+  const fakeIP  = `${Math.floor(Math.random()*180)+30}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*254)+1}`;
+  const fakeMAC = Array.from({length:6}, () => Math.floor(Math.random()*256).toString(16).padStart(2,'0').toUpperCase()).join(':');
+
+  // ---------- Clock ----------
+  let seconds = 0;
+  const clockTick = setInterval(() => {
+    seconds++;
+    const m = String(Math.floor(seconds/60)).padStart(2,'0');
+    const s = String(seconds%60).padStart(2,'0');
+    clockEl.textContent = `${m}:${s}`;
+  }, 1000);
+
+  // ---------- Build log lines (with dynamic extras) ----------
   const lines = [
-    { text: "> Initializing system scan...", delay: 400 },
-    { text: "> Accessing device...", delay: 600 },
-    { text: "> [OK] Connection established", delay: 500 },
-    { text: "> Bypassing security protocols...", delay: 700 },
-    { text: "> [OK] Firewall disabled", delay: 500 },
-    { text: "> Extracting data...", delay: 600 },
-    { text: "  ███░░░░░░░ 30%", delay: 300 },
-    { text: "  ██████░░░░ 60%", delay: 300 },
-    { text: "  █████████░ 90%", delay: 300 },
-    { text: "  ██████████ 100%", delay: 400 },
-    { text: "", delay: 200 },
-    { text: "> UPLOADING PERSONAL DATA...", delay: 500 },
-    { text: "> ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓", delay: 400 }
+    { t: `> exploit-framework v4.2.1`, c: 'info', d: 220 },
+    { t: `> Target acquired: ${info.type}`, c: '', d: 300 },
+    { t: `  ├ Device: ${info.device}`, c: 'dim', d: 180 },
+    { t: `  ├ OS: ${info.os}`, c: 'dim', d: 180 },
+    { t: `  ├ Browser: ${info.browser}`, c: 'dim', d: 180 },
+    { t: `  ├ Screen: ${info.screen} @ ${info.dpr}x`, c: 'dim', d: 180 },
+    { t: `  └ Locale: ${info.timezone} · ${info.lang}`, c: 'dim', d: 280 }
   ];
 
-  let currentLine = 0;
+  // Insert optional battery / network lines
+  if (batteryText || networkText) {
+    if (batteryText) lines.push({ t: `  ├ Battery: ${batteryText}`, c: 'dim', d: 180 });
+    if (networkText) lines.push({ t: `  ├ Network: ${networkText}`, c: 'dim', d: 180 });
+  }
 
-  function typeLine() {
-    if (currentLine >= lines.length) {
-      // Trigger red flash + glitch, then reveal
-      flash.classList.add('active');
-      terminal.classList.add('glitch');
+  lines.push(
+    { t: `> Connecting...`, c: '', d: 380 },
+    { t: `  [OK] Handshake`, c: '', d: 260 },
+    { t: `> Bypassing SSL/TLS`, c: 'warn', d: 420 },
+    { t: `  [OK] Cert spoofed`, c: '', d: 260 },
+    { t: `> Injecting payload`, c: 'warn', d: 380 },
+    { t: `  [OK] Delivered`, c: '', d: 260 },
+    { t: `> Reading local storage`, c: '', d: 420 },
+    { t: `  [!!] ${Math.floor(Math.random()*30)+8} cookies`, c: 'warn', d: 320 },
+    { t: `> Scanning credentials`, c: '', d: 420 },
+    { t: `  [!!] ${Math.floor(Math.random()*3)+1} passwords`, c: 'err', d: 340 },
+    { t: `> Accessing clipboard`, c: '', d: 340 },
+    { t: `  [OK] ${Math.floor(Math.random()*4)+1} items`, c: 'warn', d: 280 },
+    { t: `> Requesting camera/mic`, c: 'warn', d: 480 },
+    { t: `> Encrypting stolen data`, c: '', d: 340 },
+    { t: `  [OK] AES-256`, c: '', d: 260 },
+    { t: `> Uploading to remote`, c: 'err', d: 460 },
+    { t: `  [OK] ${(Math.random()*3+0.4).toFixed(1)} MB`, c: 'warn', d: 320 },
+    { t: `> Wiping traces`, c: '', d: 300 },
+    { t: `> Complete.`, c: 'err', d: 220 }
+  );
 
-      setTimeout(() => {
-        terminal.style.display = 'none';
-        awareness.style.display = 'block';
-      }, 700);
+  let i = 0;
+  const totalDelay = lines.reduce((a,b) => a + b.d, 0);
+  let elapsed = 0;
+
+  function nextLine() {
+    if (i >= lines.length) {
+      setTimeout(showAlert, 350);
       return;
     }
 
-    const line = lines[currentLine];
+    const line = lines[i];
     const div = document.createElement('div');
-    div.textContent = line.text;
-    terminal.appendChild(div);
+    if (line.c) div.className = line.c;
+    div.textContent = line.t;
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
 
-    // Add cursor to last line
-    const oldCursor = document.querySelector('.cursor');
-    if (oldCursor) oldCursor.remove();
-    const cursor = document.createElement('span');
-    cursor.className = 'cursor';
-    terminal.appendChild(cursor);
+    elapsed += line.d;
+    barEl.style.width = Math.min(100, (elapsed / totalDelay) * 100) + '%';
 
-    currentLine++;
-    setTimeout(typeLine, line.delay);
+    if (line.c === 'err') buzz(25);
+    else if (line.c === 'warn') buzz(10);
+
+    i++;
+    setTimeout(nextLine, line.d);
   }
 
-  // Start after a tiny delay so the page feels responsive
-  setTimeout(typeLine, 300);
+  // ---------- Alert ----------
+  function showAlert() {
+    let html =
+      `<b>Target:</b> ${info.type}<br>` +
+      `<b>IP:</b> ${fakeIP}<br>` +
+      `<b>MAC:</b> ${fakeMAC}<br>` +
+      `<b>Device:</b> ${info.device}<br>` +
+      `<b>OS:</b> ${info.os}<br>` +
+      `<b>Browser:</b> ${info.browser}<br>` +
+      `<b>Screen:</b> ${info.screen}<br>`;
+
+    if (batteryText) html += `<b>Battery:</b> ${batteryText}<br>`;
+    if (networkText) html += `<b>Network:</b> ${networkText}<br>`;
+    html += `<b>Locale:</b> ${info.timezone} · ${info.lang}`;
+
+    deviceInfo.innerHTML = html;
+
+    alertBox.style.display = 'flex';
+
+    redOverlay.classList.add('flash');
+    document.body.classList.add('shake');
+    buzz([100, 60, 100, 60, 220]);
+
+    setTimeout(() => document.body.classList.remove('shake'), 400);
+    setTimeout(() => redOverlay.classList.remove('flash'), 1400);
+  }
+
+  // ---------- Reveal ----------
+  dialogBtn.addEventListener('click', () => {
+    buzz(40);
+    alertBox.style.display = 'none';
+    clearInterval(clockTick);
+    reveal.style.display = 'flex';
+  }, { passive: true });
+
+  // ---------- Boot ----------
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      loader.style.opacity = '0';
+      setTimeout(() => {
+        loader.style.display = 'none';
+        scan.style.display = 'flex';
+        deviceSub.textContent = `${info.device} · ${info.os} · ${info.browser}`;
+        nextLine();
+      }, 350);
+    }, 1200);
+  });
+
+  // ---------- Prevent gestures ----------
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('contextmenu',   e => e.preventDefault());
+  document.addEventListener('dblclick',      e => e.preventDefault());
+  document.addEventListener('touchmove',     e => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+
 })();
 </script>
 
