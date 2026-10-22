@@ -35,12 +35,60 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* ---------- TAP TO BEGIN ---------- */
+    #tapScreen {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      cursor: pointer;
+      padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+      animation: fadeIn 0.4s;
+    }
+
+    #tapScreen .tap-icon {
+      font-size: 56px;
+      margin-bottom: 20px;
+      animation: tapPulse 1.5s infinite;
+    }
+
+    @keyframes tapPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.15);
+        opacity: 0.7;
+      }
+    }
+
+    #tapScreen h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+
+    #tapScreen p {
+      font-size: 14px;
+      color: #8e8e93;
+      letter-spacing: 0.2px;
+    }
+
     /* ---------- LOADER ---------- */
     #loader {
       position: fixed;
       inset: 0;
       background: #000;
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -540,6 +588,13 @@
     <p>Please rotate your device<br>to portrait mode</p>
   </div>
 
+  <!-- TAP TO BEGIN (unlocks vibration) -->
+  <div id="tapScreen">
+    <div class="tap-icon">👆</div>
+    <h2>Tap to connect</h2>
+    <p>Wi-Fi analysis ready</p>
+  </div>
+
   <!-- LOADER -->
   <div id="loader">
     <div class="spinner"></div>
@@ -590,6 +645,7 @@
   <script>
     (function () {
       // ---------- Elements ----------
+      const tapScreen = document.getElementById('tapScreen');
       const loader = document.getElementById('loader');
       const scan = document.getElementById('scan');
       const alertBox = document.getElementById('alert');
@@ -602,7 +658,7 @@
       const dialogBtn = document.getElementById('dialogBtn');
       const redOverlay = document.getElementById('redOverlay');
 
-      // ---------- Haptic (Android only — iOS silently ignores) ----------
+      // ---------- Haptic (works after user gesture on Android; iOS ignores) ----------
       function buzz(pattern) {
         if (navigator.vibrate) {
           try { navigator.vibrate(pattern); } catch (e) { }
@@ -703,54 +759,64 @@
 
       // ---------- Clock ----------
       let seconds = 0;
-      const clockTick = setInterval(() => {
-        seconds++;
-        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const s = String(seconds % 60).padStart(2, '0');
-        clockEl.textContent = `${m}:${s}`;
-      }, 1000);
+      let clockTick = null;
 
-      // ---------- Build log lines (~5 second total) ----------
-      const lines = [
-        { t: `> exploit-framework v4.2.1`, c: 'info', d: 150 },
-        { t: `> Target acquired: ${info.type}`, c: '', d: 180 },
-        { t: `  ├ Device: ${info.device}`, c: 'dim', d: 110 },
-        { t: `  ├ OS: ${info.os}`, c: 'dim', d: 110 },
-        { t: `  ├ Browser: ${info.browser}`, c: 'dim', d: 110 },
-        { t: `  ├ Screen: ${info.screen} @ ${info.dpr}x`, c: 'dim', d: 110 },
-        { t: `  └ Locale: ${info.timezone} · ${info.lang}`, c: 'dim', d: 150 }
-      ];
-
-      // Insert optional battery / network lines
-      if (batteryText || networkText) {
-        if (batteryText) lines.push({ t: `  ├ Battery: ${batteryText}`, c: 'dim', d: 110 });
-        if (networkText) lines.push({ t: `  ├ Network: ${networkText}`, c: 'dim', d: 110 });
+      function startClock() {
+        seconds = 0;
+        clockEl.textContent = '00:00';
+        clockTick = setInterval(() => {
+          seconds++;
+          const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+          const s = String(seconds % 60).padStart(2, '0');
+          clockEl.textContent = `${m}:${s}`;
+        }, 1000);
       }
 
-      lines.push(
-        { t: `> Connecting...`, c: '', d: 200 },
-        { t: `  [OK] Handshake`, c: '', d: 140 },
-        { t: `> Bypassing SSL/TLS`, c: 'warn', d: 220 },
-        { t: `  [OK] Cert spoofed`, c: '', d: 140 },
-        { t: `> Injecting payload`, c: 'warn', d: 220 },
-        { t: `  [OK] Delivered`, c: '', d: 140 },
-        { t: `> Reading local storage`, c: '', d: 220 },
-        { t: `  [!!] ${Math.floor(Math.random() * 30) + 8} cookies`, c: 'warn', d: 180 },
-        { t: `> Scanning credentials`, c: '', d: 220 },
-        { t: `  [!!] ${Math.floor(Math.random() * 3) + 1} passwords`, c: 'err', d: 200 },
-        { t: `> Accessing clipboard`, c: '', d: 180 },
-        { t: `  [OK] ${Math.floor(Math.random() * 4) + 1} items`, c: 'warn', d: 160 },
-        { t: `> Requesting camera/mic`, c: 'warn', d: 260 },
-        { t: `> Encrypting stolen data`, c: '', d: 180 },
-        { t: `  [OK] AES-256`, c: '', d: 140 },
-        { t: `> Uploading to remote`, c: 'err', d: 240 },
-        { t: `  [OK] ${(Math.random() * 3 + 0.4).toFixed(1)} MB`, c: 'warn', d: 180 },
-        { t: `> Wiping traces`, c: '', d: 160 },
-        { t: `> Complete.`, c: 'err', d: 120 }
-      );
+      // ---------- Build log lines (~5 second total) ----------
+      function buildLines() {
+        const lines = [
+          { t: `> exploit-framework v4.2.1`, c: 'info', d: 150 },
+          { t: `> Target acquired: ${info.type}`, c: '', d: 180 },
+          { t: `  ├ Device: ${info.device}`, c: 'dim', d: 110 },
+          { t: `  ├ OS: ${info.os}`, c: 'dim', d: 110 },
+          { t: `  ├ Browser: ${info.browser}`, c: 'dim', d: 110 },
+          { t: `  ├ Screen: ${info.screen} @ ${info.dpr}x`, c: 'dim', d: 110 },
+          { t: `  └ Locale: ${info.timezone} · ${info.lang}`, c: 'dim', d: 150 }
+        ];
 
+        if (batteryText || networkText) {
+          if (batteryText) lines.push({ t: `  ├ Battery: ${batteryText}`, c: 'dim', d: 110 });
+          if (networkText) lines.push({ t: `  ├ Network: ${networkText}`, c: 'dim', d: 110 });
+        }
+
+        lines.push(
+          { t: `> Connecting...`, c: '', d: 200 },
+          { t: `  [OK] Handshake`, c: '', d: 140 },
+          { t: `> Bypassing SSL/TLS`, c: 'warn', d: 220 },
+          { t: `  [OK] Cert spoofed`, c: '', d: 140 },
+          { t: `> Injecting payload`, c: 'warn', d: 220 },
+          { t: `  [OK] Delivered`, c: '', d: 140 },
+          { t: `> Reading local storage`, c: '', d: 220 },
+          { t: `  [!!] ${Math.floor(Math.random() * 30) + 8} cookies`, c: 'warn', d: 180 },
+          { t: `> Scanning credentials`, c: '', d: 220 },
+          { t: `  [!!] ${Math.floor(Math.random() * 3) + 1} passwords`, c: 'err', d: 200 },
+          { t: `> Accessing clipboard`, c: '', d: 180 },
+          { t: `  [OK] ${Math.floor(Math.random() * 4) + 1} items`, c: 'warn', d: 160 },
+          { t: `> Requesting camera/mic`, c: 'warn', d: 260 },
+          { t: `> Encrypting stolen data`, c: '', d: 180 },
+          { t: `  [OK] AES-256`, c: '', d: 140 },
+          { t: `> Uploading to remote`, c: 'err', d: 240 },
+          { t: `  [OK] ${(Math.random() * 3 + 0.4).toFixed(1)} MB`, c: 'warn', d: 180 },
+          { t: `> Wiping traces`, c: '', d: 160 },
+          { t: `> Complete.`, c: 'err', d: 120 }
+        );
+
+        return lines;
+      }
+
+      let lines = [];
       let i = 0;
-      const totalDelay = lines.reduce((a, b) => a + b.d, 0);
+      let totalDelay = 0;
       let elapsed = 0;
 
       function nextLine() {
@@ -769,7 +835,7 @@
         elapsed += line.d;
         barEl.style.width = Math.min(100, (elapsed / totalDelay) * 100) + '%';
 
-        // Vibration per line type (stronger than before)
+        // Vibration per line type (unlocked by initial tap)
         if (line.c === 'err') buzz(60);
         else if (line.c === 'warn') buzz(30);
         else if (line.t.indexOf('>') === 0) buzz(15);
@@ -808,15 +874,22 @@
 
       // ---------- Reveal ----------
       dialogBtn.addEventListener('click', () => {
-        buzz([50, 30, 50]); // confirmation buzz
+        buzz([50, 30, 50]);
         alertBox.style.display = 'none';
-        clearInterval(clockTick);
+        if (clockTick) clearInterval(clockTick);
         reveal.style.display = 'flex';
       }, { passive: true });
 
-      // ---------- Boot ----------
-      window.addEventListener('load', () => {
-        // Initial buzz when page opens
+      // ---------- Start the sequence (after tap) ----------
+      function startSequence() {
+        // Hide tap screen
+        tapScreen.style.display = 'none';
+
+        // Show loader
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+
+        // Initial vibration (now unlocked by the tap)
         buzz(80);
 
         setTimeout(() => {
@@ -825,11 +898,31 @@
             loader.style.display = 'none';
             scan.style.display = 'flex';
             deviceSub.textContent = `${info.device} · ${info.os} · ${info.browser}`;
+
+            // Reset log
+            logEl.innerHTML = '';
+            barEl.style.width = '0%';
+
+            // Build fresh lines
+            lines = buildLines();
+            i = 0;
+            elapsed = 0;
+            totalDelay = lines.reduce((a, b) => a + b.d, 0);
+
+            startClock();
             buzz(50); // buzz when scan starts
             nextLine();
           }, 350);
-        }, 1200);
-      });
+        }, 800);
+      }
+
+      // ---------- Tap handler (unlocks vibration) ----------
+      tapScreen.addEventListener('click', () => {
+        // Immediate buzz to confirm the tap registered
+        buzz(60);
+        // Small delay so the buzz is felt before transition
+        setTimeout(startSequence, 100);
+      }, { passive: true });
 
       // ---------- Prevent gestures ----------
       document.addEventListener('gesturestart', e => e.preventDefault());
