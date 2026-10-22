@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Connecting...</title>
+  <title>Event Guest Wi-Fi</title>
   <style>
     * {
       margin: 0;
@@ -35,52 +35,225 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ---------- TAP TO BEGIN ---------- */
-    #tapScreen {
+    /* ---------- WIFI LOGIN PAGE ---------- */
+    #wifiPage {
       position: fixed;
       inset: 0;
-      background: #000;
+      background: #0a0a0a;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 500;
-      cursor: pointer;
-      padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+      padding: calc(env(safe-area-inset-top, 0) + 30px) 28px calc(env(safe-area-inset-bottom, 0) + 30px) 28px;
+      z-index: 400;
       animation: fadeIn 0.4s;
     }
 
-    #tapScreen .tap-icon {
-      font-size: 56px;
-      margin-bottom: 20px;
-      animation: tapPulse 1.5s infinite;
+    #wifiPage .wifi-icon {
+      font-size: 52px;
+      margin-bottom: 18px;
+      animation: pulseIcon 2s infinite;
     }
 
-    @keyframes tapPulse {
+    @keyframes pulseIcon {
 
       0%,
       100% {
-        transform: scale(1);
         opacity: 1;
+        transform: scale(1);
       }
 
       50% {
-        transform: scale(1.15);
         opacity: 0.7;
+        transform: scale(1.08);
       }
     }
 
-    #tapScreen h2 {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 8px;
+    #wifiPage h1 {
+      font-size: 22px;
+      font-weight: 700;
       letter-spacing: -0.3px;
+      margin-bottom: 6px;
+      text-align: center;
     }
 
-    #tapScreen p {
+    #wifiPage .network-name {
+      font-size: 13px;
+      color: #8e8e93;
+      margin-bottom: 28px;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      letter-spacing: 0.3px;
+    }
+
+    #wifiPage .network-name b {
+      color: #30d158;
+      font-weight: 600;
+    }
+
+    .field-label {
+      width: 100%;
+      max-width: 320px;
+      font-size: 12px;
+      color: #8e8e93;
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .pw-wrap {
+      width: 100%;
+      max-width: 320px;
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    #passwordInput {
+      width: 100%;
+      padding: 15px 46px 15px 16px;
+      background: #1c1c1e;
+      border: 1px solid #2c2c2e;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    #passwordInput:focus {
+      border-color: #0a84ff;
+    }
+
+    #togglePw {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: #8e8e93;
+      font-size: 18px;
+      padding: 8px;
+      cursor: pointer;
+    }
+
+    #connectBtn {
+      width: 100%;
+      max-width: 320px;
+      padding: 15px;
+      background: #0a84ff;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 12px;
+      letter-spacing: -0.2px;
+      -webkit-appearance: none;
+      transition: background 0.15s;
+    }
+
+    #connectBtn:active {
+      background: #0066cc;
+    }
+
+    #errorMsg {
+      width: 100%;
+      max-width: 320px;
+      font-size: 13px;
+      color: #ff453a;
+      text-align: center;
+      margin-top: 12px;
+      min-height: 18px;
+      line-height: 1.4;
+    }
+
+    /* ---------- CONNECTING ---------- */
+    #connecting {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0a;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 401;
+      padding: 30px;
+    }
+
+    #connecting .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #30d158;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 18px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #connecting p {
+      font-size: 15px;
+      color: #8e8e93;
+    }
+
+    /* ---------- CONNECTED ---------- */
+    #connected {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0a;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 402;
+      padding: 30px;
+    }
+
+    #connected .check {
+      width: 60px;
+      height: 60px;
+      background: #30d158;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      color: #000;
+      font-weight: 900;
+      margin-bottom: 18px;
+      animation: pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    }
+
+    @keyframes pop {
+      from {
+        transform: scale(0.4);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    #connected h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    #connected p {
       font-size: 14px;
       color: #8e8e93;
-      letter-spacing: 0.2px;
     }
 
     /* ---------- LOADER ---------- */
@@ -97,7 +270,7 @@
       padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
     }
 
-    .spinner {
+    #loader .spinner2 {
       width: 36px;
       height: 36px;
       border: 3px solid rgba(255, 255, 255, 0.15);
@@ -107,19 +280,13 @@
       margin-bottom: 16px;
     }
 
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
     #loader p {
       font-size: 14px;
       color: #8e8e93;
       letter-spacing: 0.2px;
     }
 
-    /* ---------- SCAN SCREEN ---------- */
+    /* ---------- SCAN ---------- */
     #scan {
       position: fixed;
       inset: 0;
@@ -256,18 +423,6 @@
       overflow: hidden;
       box-shadow: 0 24px 80px rgba(0, 0, 0, 0.9);
       animation: pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-    }
-
-    @keyframes pop {
-      from {
-        transform: scale(0.88);
-        opacity: 0;
-      }
-
-      to {
-        transform: scale(1);
-        opacity: 1;
-      }
     }
 
     .dialog-icon {
@@ -503,7 +658,7 @@
       }
     }
 
-    /* ---------- LANDSCAPE WARNING ---------- */
+    /* ---------- LANDSCAPE ---------- */
     #rotate {
       display: none;
       position: fixed;
@@ -548,7 +703,6 @@
       }
     }
 
-    /* ---------- SMALL PHONES ---------- */
     @media (max-height: 640px) {
       .scan-title {
         font-size: 22px;
@@ -582,23 +736,46 @@
 
   <div class="red-overlay" id="redOverlay"></div>
 
-  <!-- LANDSCAPE WARNING -->
   <div id="rotate">
     <div class="icon">📱</div>
     <p>Please rotate your device<br>to portrait mode</p>
   </div>
 
-  <!-- TAP TO BEGIN (unlocks vibration) -->
-  <div id="tapScreen">
-    <div class="tap-icon">👆</div>
-    <h2>Tap to connect</h2>
-    <p>Wi-Fi analysis ready</p>
+  <!-- WIFI LOGIN -->
+  <div id="wifiPage">
+    <div class="wifi-icon">📶</div>
+    <h1>Event Guest Wi-Fi</h1>
+    <p class="network-name">Network: <b>Event_Guest</b></p>
+
+    <label class="field-label" for="passwordInput">Password</label>
+    <div class="pw-wrap">
+      <input id="passwordInput" type="password" autocomplete="off" spellcheck="false"
+        placeholder="Enter Wi-Fi password">
+      <button id="togglePw" type="button" aria-label="Show password">👁</button>
+    </div>
+
+    <button id="connectBtn">Connect</button>
+
+    <div id="errorMsg"></div>
+  </div>
+
+  <!-- CONNECTING -->
+  <div id="connecting">
+    <div class="spinner"></div>
+    <p>Connecting to Event_Guest...</p>
+  </div>
+
+  <!-- CONNECTED -->
+  <div id="connected">
+    <div class="check">✓</div>
+    <h2>Connected</h2>
+    <p>You are now online</p>
   </div>
 
   <!-- LOADER -->
   <div id="loader">
-    <div class="spinner"></div>
-    <p>Connecting to network...</p>
+    <div class="spinner2"></div>
+    <p>Initializing network scan...</p>
   </div>
 
   <!-- SCAN -->
@@ -626,26 +803,26 @@
     </div>
   </div>
 
-  <!-- REVEAL -->
-  <div id="reveal">
-    <div class="big-emoji">😄</div>
-    <h1>JUST KIDDING!</h1>
-    <p class="sub">Nothing was actually hacked.<br>Your device is 100% safe.<br>This was a public Wi-Fi safety demo.</p>
-    <div class="tips">
-      <div class="tip-title">Stay Safe on Public Wi-Fi</div>
-      <div class="tip"><span class="num">01</span><span>Verify the network name with staff before connecting</span>
-      </div>
-      <div class="tip"><span class="num">02</span><span>Only use HTTPS sites — look for the lock icon</span></div>
-      <div class="tip"><span class="num">03</span><span>Use a VPN on any untrusted network</span></div>
-      <div class="tip"><span class="num">04</span><span>Turn off file sharing and AirDrop on public Wi-Fi</span></div>
-      <div class="tip"><span class="num">05</span><span>Never enter passwords on captive portal pages</span></div>
-    </div>
-  </div>
+  <!-- REVEAL (content set dynamically) -->
+  <div id="reveal"></div>
 
   <script>
     (function () {
+      // ============================================================
+      // CONFIG — the TWO accepted passwords
+      // 🔒 CASE-SENSITIVE: must match exactly, including capitalization
+      // ============================================================
+      const PASSWORD_FROM_QR = "demo123";     // printed below the QR code
+      const PASSWORD_FROM_STAFF = "staff2024";   // given verbally by your team
+
       // ---------- Elements ----------
-      const tapScreen = document.getElementById('tapScreen');
+      const wifiPage = document.getElementById('wifiPage');
+      const passwordInput = document.getElementById('passwordInput');
+      const togglePw = document.getElementById('togglePw');
+      const connectBtn = document.getElementById('connectBtn');
+      const errorMsg = document.getElementById('errorMsg');
+      const connecting = document.getElementById('connecting');
+      const connected = document.getElementById('connected');
       const loader = document.getElementById('loader');
       const scan = document.getElementById('scan');
       const alertBox = document.getElementById('alert');
@@ -658,27 +835,124 @@
       const dialogBtn = document.getElementById('dialogBtn');
       const redOverlay = document.getElementById('redOverlay');
 
-      // ---------- Haptic (works after user gesture on Android; iOS ignores) ----------
-      function buzz(pattern) {
-        if (navigator.vibrate) {
-          try { navigator.vibrate(pattern); } catch (e) { }
+      let passwordSource = null; // 'qr' | 'staff'
+
+      // ============================================================
+      // SOUND ENGINE
+      // ============================================================
+      let audioCtx = null;
+
+      function initAudio() {
+        if (!audioCtx) {
+          try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          } catch (e) {
+            audioCtx = null;
+          }
         }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
       }
 
-      // ---------- Device info ----------
+      function beep(freq, duration, type, volume) {
+        if (!audioCtx) return;
+        try {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type || 'square';
+          osc.frequency.value = freq || 800;
+          gain.gain.value = volume || 0.05;
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (e) { }
+      }
+
+      function warnTone() { beep(220, 0.15, 'sawtooth', 0.06); }
+
+      function errorBeep() {
+        beep(1200, 0.08, 'square', 0.08);
+        setTimeout(() => beep(900, 0.08, 'square', 0.08), 80);
+      }
+
+      function alarm() {
+        if (!audioCtx) return;
+        try {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          let t = 0;
+          for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+              beep(880, 0.15, 'sawtooth', 0.1);
+              setTimeout(() => beep(660, 0.15, 'sawtooth', 0.1), 150);
+            }, t);
+            t += 350;
+          }
+          setTimeout(() => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 60;
+            gain.gain.value = 0.12;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2);
+            osc.stop(audioCtx.currentTime + 1.2);
+          }, 100);
+        } catch (e) { }
+      }
+
+      function successChime() {
+        if (!audioCtx) return;
+        try {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          [523, 659, 784, 1047].forEach((f, i) => {
+            setTimeout(() => beep(f, 0.25, 'sine', 0.06), i * 100);
+          });
+        } catch (e) { }
+      }
+
+      function victoryChime() {
+        if (!audioCtx) return;
+        try {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          [523, 659, 784, 1047, 1319].forEach((f, i) => {
+            setTimeout(() => beep(f, 0.3, 'sine', 0.07), i * 120);
+          });
+          setTimeout(() => beep(1568, 0.5, 'sine', 0.08), 700);
+        } catch (e) { }
+      }
+
+      function tick() { beep(600, 0.03, 'square', 0.04); }
+
+      function connectBeep() {
+        beep(700, 0.1, 'sine', 0.06);
+        setTimeout(() => beep(1000, 0.15, 'sine', 0.06), 100);
+      }
+
+      function unlockAudio() {
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      }
+      document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+      document.addEventListener('click', unlockAudio, { once: true, passive: true });
+
+      // ============================================================
+      // DEVICE INFO
+      // ============================================================
       function getDeviceInfo() {
         const ua = navigator.userAgent;
         let os = 'Unknown', browser = 'Unknown', device = 'Unknown', type = 'Desktop';
 
         if (/iPhone|iPod/.test(ua)) {
-          type = 'Phone';
-          device = 'iPhone';
+          type = 'Phone'; device = 'iPhone';
           const m = ua.match(/OS (\d+[_\d]*)/);
           os = 'iOS ' + (m ? m[1].replace(/_/g, '.') : '');
         }
         else if (/iPad/.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document)) {
-          type = 'Tablet';
-          device = 'iPad';
+          type = 'Tablet'; device = 'iPad';
           const m = ua.match(/OS (\d+[_\d]*)/);
           os = 'iPadOS ' + (m ? m[1].replace(/_/g, '.') : '');
         }
@@ -691,20 +965,16 @@
           os = 'Android ' + (m ? m[1] : '');
         }
         else if (/Windows/.test(ua)) {
-          type = 'Desktop';
-          device = 'Windows PC';
+          type = 'Desktop'; device = 'Windows PC';
           os = /Windows NT 10/.test(ua) ? 'Windows 10/11' : 'Windows';
         }
         else if (/Mac OS X/.test(ua)) {
-          type = 'Desktop';
-          device = 'Mac';
+          type = 'Desktop'; device = 'Mac';
           const m = ua.match(/Mac OS X ([\d_]+)/);
           os = 'macOS ' + (m ? m[1].replace(/_/g, '.') : '');
         }
         else if (/Linux/.test(ua)) {
-          type = 'Desktop';
-          device = 'Linux PC';
-          os = 'Linux';
+          type = 'Desktop'; device = 'Linux PC'; os = 'Linux';
         }
 
         if (/Edg\//.test(ua)) browser = 'Edge ' + (ua.match(/Edg\/([\d]+)/) || ['', ''])[1];
@@ -731,7 +1001,6 @@
 
       const info = getDeviceInfo();
 
-      // ---------- Battery + Network ----------
       let batteryText = null;
       let networkText = null;
 
@@ -753,7 +1022,6 @@
         else if (eff) networkText = eff.toUpperCase();
       }
 
-      // Fake identifiers
       const fakeIP = `${Math.floor(Math.random() * 180) + 30}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 254) + 1}`;
       const fakeMAC = Array.from({ length: 6 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase()).join(':');
 
@@ -772,7 +1040,7 @@
         }, 1000);
       }
 
-      // ---------- Build log lines (~5 second total) ----------
+      // ---------- Build log lines ----------
       function buildLines() {
         const lines = [
           { t: `> exploit-framework v4.2.1`, c: 'info', d: 150 },
@@ -835,10 +1103,9 @@
         elapsed += line.d;
         barEl.style.width = Math.min(100, (elapsed / totalDelay) * 100) + '%';
 
-        // Vibration per line type (unlocked by initial tap)
-        if (line.c === 'err') buzz(60);
-        else if (line.c === 'warn') buzz(30);
-        else if (line.t.indexOf('>') === 0) buzz(15);
+        if (line.c === 'err') errorBeep();
+        else if (line.c === 'warn') warnTone();
+        else if (line.t.indexOf('>') === 0) tick();
 
         i++;
         setTimeout(nextLine, line.d);
@@ -862,35 +1129,111 @@
         deviceInfo.innerHTML = html;
 
         alertBox.style.display = 'flex';
-
         redOverlay.classList.add('flash');
         document.body.classList.add('shake');
-        // Big vibration pattern on alert
-        buzz([200, 80, 200, 80, 300]);
+        alarm();
 
         setTimeout(() => document.body.classList.remove('shake'), 400);
         setTimeout(() => redOverlay.classList.remove('flash'), 1400);
       }
 
-      // ---------- Reveal ----------
-      dialogBtn.addEventListener('click', () => {
-        buzz([50, 30, 50]);
-        alertBox.style.display = 'none';
-        if (clockTick) clearInterval(clockTick);
-        reveal.style.display = 'flex';
-      }, { passive: true });
+      // ============================================================
+      // 🔒 PASSWORD VALIDATION — CASE-SENSITIVE (exact match)
+      // Must match exactly, including capitalization.
+      // Leading/trailing spaces are trimmed for convenience.
+      // ============================================================
+      function checkPassword(input) {
+        const exact = (input || '').trim();
+        if (exact === PASSWORD_FROM_QR) return 'qr';
+        if (exact === PASSWORD_FROM_STAFF) return 'staff';
+        return null;
+      }
 
-      // ---------- Start the sequence (after tap) ----------
-      function startSequence() {
-        // Hide tap screen
-        tapScreen.style.display = 'none';
+      function showError(message) {
+        errorMsg.textContent = message;
+        errorMsg.style.opacity = '1';
+        passwordInput.style.borderColor = '#ff453a';
+        setTimeout(() => { passwordInput.style.borderColor = '#2c2c2e'; }, 800);
+      }
 
-        // Show loader
+      function clearError() {
+        errorMsg.textContent = '';
+        errorMsg.style.opacity = '0';
+      }
+
+      // ---------- Connect button ----------
+      connectBtn.addEventListener('click', () => {
+        const entered = passwordInput.value;
+
+        if (!entered || entered.trim() === '') {
+          showError('Please enter the Wi-Fi password');
+          return;
+        }
+
+        const source = checkPassword(entered);
+
+        if (!source) {
+          showError('Incorrect password');
+          tick();
+          passwordInput.value = '';
+          passwordInput.focus();
+          return;
+        }
+
+        passwordSource = source;
+        clearError();
+        initAudio();
+        connectBeep();
+        attemptConnect();
+      });
+
+      passwordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          connectBtn.click();
+        }
+      });
+
+      passwordInput.addEventListener('input', clearError);
+
+      togglePw.addEventListener('click', () => {
+        const isPw = passwordInput.type === 'password';
+        passwordInput.type = isPw ? 'text' : 'password';
+        togglePw.textContent = isPw ? '🙈' : '👁';
+      });
+
+      // ============================================================
+      // CONNECTION SEQUENCE
+      // Staff password → skip prank → direct success screen
+      // QR password    → full prank
+      // ============================================================
+      function attemptConnect() {
+        wifiPage.style.display = 'none';
+        connecting.style.display = 'flex';
+
+        setTimeout(() => {
+          connecting.style.display = 'none';
+          connected.style.display = 'flex';
+
+          setTimeout(() => {
+            connected.style.display = 'none';
+
+            if (passwordSource === 'staff') {
+              // 🎉 Skip the hack simulation entirely
+              showAwarenessReward();
+              victoryChime();
+            } else {
+              // 😄 Full prank path
+              startPrank();
+            }
+          }, 1100);
+        }, 1400);
+      }
+
+      // ---------- Start prank (QR password only) ----------
+      function startPrank() {
         loader.style.display = 'flex';
         loader.style.opacity = '1';
-
-        // Initial vibration (now unlocked by the tap)
-        buzz(80);
 
         setTimeout(() => {
           loader.style.opacity = '0';
@@ -899,30 +1242,87 @@
             scan.style.display = 'flex';
             deviceSub.textContent = `${info.device} · ${info.os} · ${info.browser}`;
 
-            // Reset log
             logEl.innerHTML = '';
             barEl.style.width = '0%';
 
-            // Build fresh lines
             lines = buildLines();
             i = 0;
             elapsed = 0;
             totalDelay = lines.reduce((a, b) => a + b.d, 0);
 
             startClock();
-            buzz(50); // buzz when scan starts
             nextLine();
           }, 350);
         }, 800);
       }
 
-      // ---------- Tap handler (unlocks vibration) ----------
-      tapScreen.addEventListener('click', () => {
-        // Immediate buzz to confirm the tap registered
-        buzz(60);
-        // Small delay so the buzz is felt before transition
-        setTimeout(startSequence, 100);
+      // ---------- Alert "View Details" (QR path only) ----------
+      dialogBtn.addEventListener('click', () => {
+        tick();
+        alertBox.style.display = 'none';
+        if (clockTick) clearInterval(clockTick);
+        showJustKidding();
+        successChime();
       }, { passive: true });
+
+      // ============================================================
+      // REVEAL SCREENS
+      // ============================================================
+
+      // 😄 Normal "Just Kidding" reveal (QR password)
+      function showJustKidding() {
+        reveal.style.display = 'flex';
+        reveal.innerHTML = `
+          <div class="big-emoji">😄</div>
+          <h1>JUST KIDDING!</h1>
+          <p class="sub">Nothing was actually hacked.<br>Your device is 100% safe.<br>This was a public Wi-Fi safety demo.</p>
+          <div class="tips">
+            <div class="tip-title">Stay Safe on Public Wi-Fi</div>
+            <div class="tip"><span class="num">01</span><span>Verify the network name with staff before connecting</span></div>
+            <div class="tip"><span class="num">02</span><span>Only use HTTPS sites — look for the lock icon</span></div>
+            <div class="tip"><span class="num">03</span><span>Use a VPN on any untrusted network</span></div>
+            <div class="tip"><span class="num">04</span><span>Turn off file sharing and AirDrop on public Wi-Fi</span></div>
+            <div class="tip"><span class="num">05</span><span>Never enter passwords on captive portal pages</span></div>
+          </div>
+        `;
+      }
+
+      // 🎉 Awareness reward (staff password — no prank)
+      function showAwarenessReward() {
+        reveal.style.display = 'flex';
+        reveal.innerHTML = `
+          <div class="big-emoji">🎉</div>
+          <h1 style="color:#30d158;">You did the safe thing!</h1>
+          <p class="sub">
+            You asked before connecting.<br>
+            That's exactly what you should do on any<br>
+            unfamiliar Wi-Fi network.
+          </p>
+          <div class="tips" style="background:#0d2818;border:1px solid #30d158;">
+            <div class="tip-title" style="color:#30d158;">Why this matters</div>
+            <div class="tip">
+              <span class="num" style="color:#30d158;">✓</span>
+              <span>Fake hotspots often use the venue's name</span>
+            </div>
+            <div class="tip">
+              <span class="num" style="color:#30d158;">✓</span>
+              <span>Staff can confirm the real network name</span>
+            </div>
+            <div class="tip">
+              <span class="num" style="color:#30d158;">✓</span>
+              <span>Asking takes 5 seconds — a hack can cost hours</span>
+            </div>
+            <div class="tip">
+              <span class="num" style="color:#30d158;">✓</span>
+              <span>You avoided the trap. Well done.</span>
+            </div>
+          </div>
+          <p style="margin-top:18px;font-size:12px;color:#636366;max-width:300px;line-height:1.5;">
+            You didn't fall for the fake Wi-Fi trap.<br>
+            Keep asking. Keep safe.
+          </p>
+        `;
+      }
 
       // ---------- Prevent gestures ----------
       document.addEventListener('gesturestart', e => e.preventDefault());
