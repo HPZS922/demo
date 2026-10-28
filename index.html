@@ -39,7 +39,7 @@
     #wifiPage {
       position: fixed;
       inset: 0;
-      background: #0a0a0a;
+      background: radial-gradient(circle at 50% 30%, #14213d 0%, #0a0a0a 70%);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -548,6 +548,20 @@
       }
     }
 
+    /* 😄 Prank reveal background — warm dark with subtle red glow */
+    #reveal.bg-prank {
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255, 59, 48, 0.15), transparent 60%),
+        linear-gradient(160deg, #0a0a0a 0%, #1a0808 100%);
+    }
+
+    /* 🎉 Reward reveal background — green celebration */
+    #reveal.bg-reward {
+      background:
+        radial-gradient(circle at 50% 20%, rgba(48, 209, 88, 0.18), transparent 60%),
+        linear-gradient(160deg, #0a0a0a 0%, #0a1f12 100%);
+    }
+
     #reveal h1 {
       font-size: 28px;
       font-weight: 800;
@@ -561,7 +575,7 @@
       color: #8e8e93;
       margin-bottom: 22px;
       line-height: 1.5;
-      max-width: 300px;
+      max-width: 500px;
     }
 
     .tips {
@@ -729,6 +743,18 @@
         font-size: 12.5px;
       }
     }
+
+    #reveal .big-emoji {
+  font-size: 60px;
+  margin-bottom: 12px;
+  animation: wiggle 1.2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-6deg); }
+  50%      { transform: rotate(6deg); }
+}
   </style>
 </head>
 
@@ -743,9 +769,10 @@
 
   <!-- WIFI LOGIN -->
   <div id="wifiPage">
-    <div class="wifi-icon">📶</div>
-    <h1>Event Guest Wi-Fi</h1>
-    <p class="network-name">Network: <b>Event_Guest</b></p>
+    <div class="wifi-icon"><img src="wifi.png" alt="Logo" class="logo-img">
+</div>
+    <h1>ClickOrTrap Guest Wi-Fi</h1>
+    <p class="network-name">Network: <b>ClickOrTrap_Guest</b></p>
 
     <label class="field-label" for="passwordInput">Password</label>
     <div class="pw-wrap">
@@ -762,7 +789,7 @@
   <!-- CONNECTING -->
   <div id="connecting">
     <div class="spinner"></div>
-    <p>Connecting to Event_Guest...</p>
+    <p>Connecting to ClickOrTrap_Guest...</p>
   </div>
 
   <!-- CONNECTED -->
@@ -812,8 +839,8 @@
       // CONFIG — the TWO accepted passwords
       // 🔒 CASE-SENSITIVE: must match exactly, including capitalization
       // ============================================================
-      const PASSWORD_FROM_QR = "demo123";     // printed below the QR code
-      const PASSWORD_FROM_STAFF = "staff2024";   // given verbally by your team
+      const PASSWORD_FROM_QR = "ThinkCheck";     // printed below the QR code
+      const PASSWORD_FROM_STAFF = "AskUs2026";   // given verbally by your team
 
       // ---------- Elements ----------
       const wifiPage = document.getElementById('wifiPage');
@@ -1272,13 +1299,20 @@
       // 😄 Normal "Just Kidding" reveal (QR password)
       function showJustKidding() {
         reveal.style.display = 'flex';
+        reveal.className = 'bg-prank';
         reveal.innerHTML = `
           <div class="big-emoji">😄</div>
           <h1>JUST KIDDING!</h1>
-          <p class="sub">Nothing was actually hacked.<br>Your device is 100% safe.<br>This was a public Wi-Fi safety demo.</p>
+         <p class="sub">
+            Nothing was actually hacked — your device is 100% safe.<br>
+            This was a public Wi-Fi safety demo.<br><br>
+            <b style="color:#30d158;">Think · Check · Click</b><br>
+            <b style="color:#ffd60a;">Did you ask staff before typing the password?</b><br>
+            That's the check step. The poster alone isn't enough.
+          </p>
           <div class="tips">
             <div class="tip-title">Stay Safe on Public Wi-Fi</div>
-            <div class="tip"><span class="num">01</span><span>Verify the network name with staff before connecting</span></div>
+            <div class="tip"><span class="num">01</span><span>Never enter a Wi-Fi password you haven't verified with staff</span></div>
             <div class="tip"><span class="num">02</span><span>Only use HTTPS sites — look for the lock icon</span></div>
             <div class="tip"><span class="num">03</span><span>Use a VPN on any untrusted network</span></div>
             <div class="tip"><span class="num">04</span><span>Turn off file sharing and AirDrop on public Wi-Fi</span></div>
@@ -1290,6 +1324,7 @@
       // 🎉 Awareness reward (staff password — no prank)
       function showAwarenessReward() {
         reveal.style.display = 'flex';
+        reveal.className = 'bg-reward';
         reveal.innerHTML = `
           <div class="big-emoji">🎉</div>
           <h1 style="color:#30d158;">You did the safe thing!</h1>
@@ -1302,7 +1337,7 @@
             <div class="tip-title" style="color:#30d158;">Why this matters</div>
             <div class="tip">
               <span class="num" style="color:#30d158;">✓</span>
-              <span>Fake hotspots often use the venue's name</span>
+              <span>You confirmed the password with staff</span>
             </div>
             <div class="tip">
               <span class="num" style="color:#30d158;">✓</span>
